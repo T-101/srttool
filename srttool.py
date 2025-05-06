@@ -99,5 +99,5 @@ if __name__ == "__main__":
             new_lines.append(output + "\n")
 
     if args.in_place:
-        with open(args.file.name, "w") as f:
+        with open(args.file, "w") as f:
             f.writelines(new_lines)
