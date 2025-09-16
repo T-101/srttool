@@ -61,37 +61,23 @@ def clear_hearing_impaired(text: list) -> list:
     return [line for line in text if not re.search(r"\[.*?\]", line)]
 
 
-def split_subtitle_three_to_two(lines):
-    """
-    Convert a 3-line subtitle into 2 lines, with the second line slightly longer.
-
-    Args:
-        lines (list[str]): List of subtitle lines (length = 3).
-
-    Returns:
-        list[str]: Two lines of subtitle text.
-    """
-    # Merge into one string
+def split_subtitle_three_to_two(lines: list[str]) -> list[str]:
     text = " ".join(line.strip() for line in lines if line.strip())
     words = text.split()
 
-    # Ideal split: slightly before the halfway mark
     split_index = len(words) // 2 - 1 if len(words) > 4 else len(words) // 2
 
-    # Try a few split points around the middle to find best balance
     best_split = split_index
     best_ratio = float("inf")
 
     for i in range(max(1, split_index - 2), min(len(words), split_index + 3)):
         left = " ".join(words[:i])
         right = " ".join(words[i:])
-        # we want right line longer, so penalize if left is longer
         ratio = abs(len(right) - len(left)) - (len(right) >= len(left)) * 2
         if ratio < best_ratio:
             best_ratio = ratio
             best_split = i
 
-    # Build two lines
     line1 = " ".join(words[:best_split])
     line2 = " ".join(words[best_split:])
 
@@ -103,9 +89,6 @@ if __name__ == "__main__":
 
     for index, srt_item in enumerate(srt_generator(args.file), start=1):
         lines = srt_item.splitlines()
-        old_index = lines.pop(0)
-        # if not old_index.isdigit():
-        #     raise ValueError(f"Invalid SRT index: {old_index}")
         timestamps = lines.pop(0)
         start, end = timestamps.split(" --> ")
 
