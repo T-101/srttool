@@ -1,17 +1,29 @@
 #!/usr/bin/env python3
 
 import re
+import sys
 import codecs
 import argparse
 from decimal import Decimal
 
-parser = argparse.ArgumentParser(description="options")
-parser.add_argument("file", help="File to process")
+
+class CustomArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        # Special-case the shift argument
+        if "argument -s/--shift" in message and "expected one argument" in message:
+            message += "\nHint: please use -s=-15 for negative values"
+        self.print_usage(sys.stderr)
+        self.exit(2, f"{self.prog}: error: {message}\n")
+
+
+parser = CustomArgumentParser(description="options")
 parser.add_argument('-i', '--in-place', action="store_true", help="Edit file in place")
 parser.add_argument('-f', '--fps', nargs=2, type=Decimal, help="Convert [FPS] to [FPS]")
-parser.add_argument('-s', '--shift', nargs=1, type=Decimal, help="Shift time by [seconds]")
+parser.add_argument('-s', '--shift', type=Decimal,
+                    help="Shift time by [seconds] (use -s/--shift=-N for negative shift)")
 parser.add_argument('-c', '--clear', action="store_true", help="Clear hearing impaired text")
 parser.add_argument('-3', '--three', action="store_true", help="Convert 3-line subtitles to 2 lines")
+parser.add_argument("file", help="File to process")
 
 args = parser.parse_args()
 
@@ -89,6 +101,7 @@ if __name__ == "__main__":
 
     for index, srt_item in enumerate(srt_generator(args.file), start=1):
         lines = srt_item.splitlines()
+        _ = lines.pop(0)  # discard original index
         timestamps = lines.pop(0)
         start, end = timestamps.split(" --> ")
 
@@ -97,7 +110,7 @@ if __name__ == "__main__":
             end = change_fps(args.fps[0], args.fps[1], end)
 
         if args.shift:
-            shift_seconds = args.shift[0] * 1000
+            shift_seconds = args.shift * 1000
             start_ms = timestamp_to_ms(start) + int(shift_seconds)
             end_ms = timestamp_to_ms(end) + int(shift_seconds)
             if start_ms < 0:
